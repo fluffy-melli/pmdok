@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/docker/docker/client"
@@ -8,6 +9,11 @@ import (
 )
 
 func handleArgs(client *client.Client, args []string) {
+	if len(args) <= 1 || args[1] == "help" {
+		printHelp()
+		return
+	}
+
 	args = args[1:]
 	for i, arg := range args {
 		switch arg {
@@ -28,9 +34,31 @@ func handleArgs(client *client.Client, args []string) {
 		case "list":
 			docker.ContainerList(client)
 		default:
+			printHelp()
 			return
 		}
 	}
+}
+
+func printHelp() {
+	fmt.Println(`Usage:
+  pmdok list
+	- Retrieves the list from Docker.
+
+  pmdok pull <image (e.g., ubuntu)>
+	- Downloads a Docker image.
+
+  pmdok new <image (e.g., ubuntu)> <name> <commands to run>
+	- Creates a new Docker container. The root is the current directory.
+
+  pmdok start <name>
+	- Starts a Docker container.
+
+  pmdok stop <name>
+	- Stops a Docker container.
+
+  pmdok del <name>
+	- Deletes a Docker container.`)
 }
 
 func main() {
