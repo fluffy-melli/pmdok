@@ -17,6 +17,8 @@ func handleArgs(client *client.Client, args []string) {
 			docker.StartContainer(client, args[i+1])
 		case "stop":
 			docker.StopContainer(client, args[i+1])
+		case "pull":
+			docker.PullImage(client, args[i+1])
 		case "new":
 			executable, err := os.Getwd()
 			if err != nil {
