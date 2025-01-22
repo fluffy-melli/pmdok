@@ -19,20 +19,26 @@ func handleArgs(client *client.Client, args []string) {
 		switch arg {
 		case "del":
 			docker.RemoveContainer(client, args[i+1])
+			return
 		case "start":
 			docker.StartContainer(client, args[i+1])
+			return
 		case "stop":
 			docker.StopContainer(client, args[i+1])
+			return
 		case "pull":
 			docker.PullImage(client, args[i+1])
+			return
 		case "new":
 			executable, err := os.Getwd()
 			if err != nil {
 				docker.Error(docker.ERROR, "Could not get executable path: %s", err)
 			}
 			docker.CreateAndStartContainer(client, args[i+1], args[i+2], executable, args[i+3:])
+			return
 		case "list":
 			docker.ContainerList(client)
+			return
 		default:
 			printHelp()
 			return
