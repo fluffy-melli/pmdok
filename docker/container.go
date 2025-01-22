@@ -28,6 +28,9 @@ func ContainerList(cli *client.Client) {
 		Error(ERROR, "\033[31mlist containers:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
 		return
 	}
+	if len(containers) == 0 {
+		Error(ERROR, "\033[31mno containers found\033[0m\n")
+	}
 	for _, container := range containers {
 		status := container.State
 		created := time.Unix(container.Created, 0)
@@ -37,6 +40,78 @@ func ContainerList(cli *client.Client) {
 		} else {
 			Print(ERROR, "\033[1m\033[37m\033[41m%s\033[0m (stopped \033[1m\033[34m\033[43m%s\033[0m ago)\n", container.Names[0][1:], duration)
 		}
+	}
+}
+
+func StartContainer(cli *client.Client, containerID string) {
+	err := cli.ContainerStart(context.Background(), containerID, container.StartOptions{})
+	if err != nil {
+		Error(ERROR, "\033[31mstart container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
+		return
+	}
+	Print(INFO, "started container: \033[1m\033[37m\033[42m%s\033[0m\n", containerID)
+}
+
+func StopContainer(cli *client.Client, containerID string) {
+	timeout := 10
+	err := cli.ContainerStop(context.Background(), containerID, container.StopOptions{Timeout: &timeout})
+	if err != nil {
+		Error(ERROR, "\033[31mstop container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
+		return
+	}
+	Print(INFO, "stopped container: \033[1m\033[37m\033[42m%s\033[0m\n", containerID)
+}
+
+func RemoveContainer(cli *client.Client, containerID string) {
+	err := cli.ContainerRemove(context.Background(), containerID, container.RemoveOptions{Force: true})
+	if err != nil {
+		Error(ERROR, "\033[31mremove container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
+		return
+	}
+	Print(INFO, "removed container: \033[1m\033[37m\033[42m%s\033[0m\n", containerID)
+}
+
+func GetAllLogs(cli *client.Client) {
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
+	if err != nil {
+		Error(ERROR, "\033[31mlist containers:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
+		return
+	}
+	if len(containers) == 0 {
+		Error(ERROR, "\033[31mno containers found\033[0m\n")
+	}
+	for _, info := range containers {
+		logs, err := cli.ContainerLogs(context.Background(), info.ID, container.LogsOptions{ShowStdout: true, ShowStderr: true})
+		if err != nil {
+			Error(ERROR, "\033[31mget logs for container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
+			return
+		}
+		defer logs.Close()
+		buf := make([]byte, 1024)
+		for {
+			n, err := logs.Read(buf)
+			if err != nil {
+				break
+			}
+			os.Stdout.Write(buf[:n])
+		}
+	}
+}
+
+func GetLogs(cli *client.Client, containerID string) {
+	logs, err := cli.ContainerLogs(context.Background(), containerID, container.LogsOptions{ShowStdout: true, ShowStderr: true})
+	if err != nil {
+		Error(ERROR, "\033[31mget logs for container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
+		return
+	}
+	defer logs.Close()
+	buf := make([]byte, 1024)
+	for {
+		n, err := logs.Read(buf)
+		if err != nil {
+			break
+		}
+		os.Stdout.Write(buf[:n])
 	}
 }
 
@@ -77,32 +152,4 @@ func CreateAndStartContainer(cli *client.Client, imageName string, containerName
 		return
 	}
 	Print(INFO, "create container: \033[1m\033[37m\033[42m%s\033[0m\n", containerName)
-}
-
-func StartContainer(cli *client.Client, containerID string) {
-	err := cli.ContainerStart(context.Background(), containerID, container.StartOptions{})
-	if err != nil {
-		Error(ERROR, "\033[31mstart container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
-		return
-	}
-	Print(INFO, "started container: \033[1m\033[37m\033[42m%s\033[0m\n", containerID)
-}
-
-func StopContainer(cli *client.Client, containerID string) {
-	timeout := 10
-	err := cli.ContainerStop(context.Background(), containerID, container.StopOptions{Timeout: &timeout})
-	if err != nil {
-		Error(ERROR, "\033[31mstop container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
-		return
-	}
-	Print(INFO, "stopped container: \033[1m\033[37m\033[42m%s\033[0m\n", containerID)
-}
-
-func RemoveContainer(cli *client.Client, containerID string) {
-	err := cli.ContainerRemove(context.Background(), containerID, container.RemoveOptions{Force: true})
-	if err != nil {
-		Error(ERROR, "\033[31mremove container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
-		return
-	}
-	Print(INFO, "removed container: \033[1m\033[37m\033[42m%s\033[0m\n", containerID)
 }
