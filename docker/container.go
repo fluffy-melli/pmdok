@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"path/filepath"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -49,9 +50,14 @@ func PullImage(cli *client.Client, imageName string) {
 }
 
 func CreateAndStartContainer(cli *client.Client, imageName string, containerName string, workingDir string, cmd []string) {
+	absWorkingDir, err := filepath.Abs(workingDir)
+	if err != nil {
+		Error(ERROR, "\033[31mresolve absolute working directory:\033[0m \033[1m\033[37m\033[41m%v\033[0m", err)
+		return
+	}
 	containerConfig := &container.Config{
 		Image:      imageName,
-		WorkingDir: workingDir,
+		WorkingDir: absWorkingDir,
 		Cmd:        cmd,
 	}
 	resp, err := cli.ContainerCreate(context.Background(), containerConfig, nil, nil, nil, containerName)
