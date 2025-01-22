@@ -5,6 +5,7 @@ go 1.22.2
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.4.14 // indirect
+	github.com/akamensky/argparse v1.4.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker v27.5.0+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
