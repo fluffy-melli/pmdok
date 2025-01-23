@@ -144,4 +144,5 @@ func CreaftContainer(cli *client.Client, image string, name string, cmd []string
 		return
 	}
 	Print(INFO, "created container: \033[1m\033[37m\033[42m%s\033[0m\n", resp.ID)
+	StartContainer(cli, resp.ID)
 }
