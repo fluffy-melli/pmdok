@@ -20,6 +20,12 @@ func handleArgs(client *client.Client, args []string) {
 	delName := delCmd.String("n", "name", &argparse.Options{Required: true, Help: "Name of the container"})
 	logsCmd := parser.NewCommand("log", "Retrieves the logs from a Docker container")
 	logsCmdName := logsCmd.String("n", "name", &argparse.Options{Required: false, Help: "Name of the container"})
+	creaftCmd := parser.NewCommand("create", "Creates a Docker container")
+	creaftCmdName := creaftCmd.String("n", "name", &argparse.Options{Required: true, Help: "Name of the container"})
+	creaftCmdImage := creaftCmd.String("i", "image", &argparse.Options{Required: true, Help: "Image of the container"})
+	creaftCmdCmd := creaftCmd.StringList("c", "cmd", &argparse.Options{Required: true, Help: "Command of the container"})
+	pullCmd := parser.NewCommand("pull", "Pulls a Docker image")
+	pullCmdImage := pullCmd.String("i", "image", &argparse.Options{Required: true, Help: "Image to pull"})
 
 	err := parser.Parse(args)
 	if err != nil {
@@ -42,6 +48,10 @@ func handleArgs(client *client.Client, args []string) {
 			return
 		}
 		docker.GetLogs(client, *logsCmdName)
+	case pullCmd.Happened():
+		docker.PullImage(client, *pullCmdImage)
+	case creaftCmd.Happened():
+		docker.CreaftContainer(client, *creaftCmdImage, *creaftCmdName, *creaftCmdCmd)
 	default:
 		return
 	}

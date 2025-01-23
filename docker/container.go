@@ -3,14 +3,11 @@ package docker
 import (
 	"context"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func NewClient() *client.Client {
@@ -115,41 +112,34 @@ func GetLogs(cli *client.Client, containerID string) {
 	}
 }
 
-func PullImage(cli *client.Client, imageName string) {
-	start := time.Now().UnixMilli()
-	reader, err := cli.ImagePull(context.Background(), imageName, image.PullOptions{})
+func PullImage(cli *client.Client, imagename string) {
+	out, err := cli.ImagePull(context.Background(), imagename, image.PullOptions{})
 	if err != nil {
 		Error(ERROR, "\033[31mpull image:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
 		return
 	}
-	defer reader.Close()
-	end := time.Now().UnixMilli()
-	Print(INFO, "downloaded image: \033[1m\033[37m\033[42m%s / %fms\033[0m\n", imageName, float64(end-start)/1000)
+	defer out.Close()
+	buf := make([]byte, 1024)
+	for {
+		_, err := out.Read(buf)
+		if err != nil {
+			Error(ERROR, "\033[31mread image pull:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
+			break
+		}
+		//os.Stdout.Write(buf[:n])
+	}
+	Print(INFO, "pulled image: \033[1m\033[37m\033[42m%s\033[0m\n", imagename)
 }
 
-func CreateAndStartContainer(cli *client.Client, imageName string, containerName string, workingDir string, cmd []string) {
-	absWorkingDir, err := filepath.Abs(workingDir)
-	if err != nil {
-		Error(ERROR, "\033[31mresolve absolute working directory:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
-		return
+func CreaftContainer(cli *client.Client, image string, name string, cmd []string) {
+	config := &container.Config{
+		Image: image,
+		Cmd:   cmd,
 	}
-	if _, err := os.Stat(absWorkingDir); os.IsNotExist(err) {
-		Error(ERROR, "\033[31mworking directory does not exist:\033[0m \033[1m\033[37m\033[41m%s\033[0m\n", absWorkingDir)
-		return
-	}
-	containerConfig := &container.Config{
-		WorkingDir: strings.ReplaceAll(absWorkingDir, "\\", "/"),
-		Cmd:        cmd,
-	}
-	resp, err := cli.ContainerCreate(context.Background(), containerConfig, nil, nil, &v1.Platform{OS: "linux"}, containerName)
+	resp, err := cli.ContainerCreate(context.Background(), config, nil, nil, nil, name)
 	if err != nil {
 		Error(ERROR, "\033[31mcreate container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
 		return
 	}
-	err = cli.ContainerStart(context.Background(), resp.ID, container.StartOptions{})
-	if err != nil {
-		Error(ERROR, "\033[31mstart container:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
-		return
-	}
-	Print(INFO, "create container: \033[1m\033[37m\033[42m%s\033[0m\n", containerName)
+	Print(INFO, "created container: \033[1m\033[37m\033[42m%s\033[0m\n", resp.ID)
 }
