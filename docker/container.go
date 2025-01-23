@@ -113,6 +113,7 @@ func GetLogs(cli *client.Client, containerID string) {
 }
 
 func PullImage(cli *client.Client, imagename string) {
+	start := time.Now().UnixMilli()
 	out, err := cli.ImagePull(context.Background(), imagename, image.PullOptions{})
 	if err != nil {
 		Error(ERROR, "\033[31mpull image:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
@@ -123,12 +124,13 @@ func PullImage(cli *client.Client, imagename string) {
 	for {
 		_, err := out.Read(buf)
 		if err != nil {
-			Error(ERROR, "\033[31mread image pull:\033[0m \033[1m\033[37m\033[41m%v\033[0m\n", err)
+			//Print(ERROR, "\033[31mread image pull:\033[0m \033[1m\033[37m\033[41m%v / [%v:%v]\033[0m\n", err, n, len(buf))
 			break
 		}
 		//os.Stdout.Write(buf[:n])
 	}
-	Print(INFO, "pulled image: \033[1m\033[37m\033[42m%s\033[0m\n", imagename)
+	end := time.Now().UnixMilli()
+	Print(INFO, "pulled image: \033[1m\033[37m\033[42m%s [%fms]\033[0m\n", imagename, float64(end-start)/1000)
 }
 
 func CreaftContainer(cli *client.Client, image string, name string, cmd []string) {
